@@ -54,7 +54,7 @@ avg-pages-per-site.txt: tot-pages.txt tot-sites.txt
 rank-bot-20.txt: $(TOPLIST)
 	@awk '$$2 == 0 {print $$1}' $< | sort -nu | tail -21 | head -1 > $@
 
-# Generate the pages to crawl and look for CDN servers.
+# Obtain a set of landing pages to crawl and look for CDN servers.
 #
 # We derive the set of pages to crawl from the Hispar list.
 #
