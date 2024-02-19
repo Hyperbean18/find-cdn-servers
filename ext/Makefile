@@ -8,13 +8,17 @@ URL := https://github.com/lightbody/$(LIB)/releases/download/$(PKG)/$(ZIP)
 
 .PHONY: install clean wipe
 
+.DEFAULT_GOAL := install
+
 
 $(ZIP):
 	@wget $(URL)
 
 
-install: $(ZIP)
-	@unzip $(ZIP)
+$(PKG)/bin/$(LIB): $(ZIP)
+	@unzip $(ZIP) && [ -f $@ ] && touch $@
+
+install: $(PKG)/bin/$(LIB)
 
 
 clean:
