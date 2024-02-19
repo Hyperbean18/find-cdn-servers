@@ -9,7 +9,8 @@ HISPAR_STATS:=tot-pages.txt	\
 	tot-sites.txt		\
 	avg-pages-per-site.txt
 
-ALL :=
+ALL := rank-bot-20.txt \
+	crawl-info.txt
 
 
 .PHONY: all clean wipe
@@ -47,6 +48,37 @@ avg-pages-per-site.txt: tot-pages.txt tot-sites.txt
 		`awk '{print $$1}' $(word 1, $^)`	\
 		" / "					\
 		`cat $(word 2, $^)` | bc > $@
+
+
+# Get the rank of the last site before the sites with the lowest 20 ranks.
+rank-bot-20.txt: $(TOPLIST)
+	@awk '$$2 == 0 {print $$1}' $< | sort -nu | tail -21 | head -1 > $@
+
+# Generate the pages to crawl and look for CDN servers.
+#
+# We derive the set of pages to crawl from the Hispar list.
+#
+# The format of the Hispar list is as follows.
+# <alexa_rank> <search_rank> <url>
+#
+#   where search_rank is zero for landing pages.
+#
+# Pick the top 20 landing pages.
+# Pick another 10 from ranks in the interval (20, 100].
+# Pick another 20 from ranks in the interval (100, 1000].
+# Pick another 30 from ranks in the interval (1000, bottom-20).
+# Pick the bottom 20 landing pages.
+#
+# Store URLs selected for crawling with rank information.
+crawl-info.txt: $(TOPLIST) rank-bot-20.txt
+	@awk '$$2 == 0 && $$1 <= 20'                $< > $@
+	@awk '$$2 == 0 && $$1 >  20 && $$1 <= 100'  $< | \
+		shuf | head -10 >> $@
+	@awk '$$2 == 0 && $$1 > 100 && $$1 <= 1000' $< | \
+		shuf | head -20 >> $@
+	@awk -vN=`cat $(word 2, $^)`			 \
+	      '$$2 == 0 && $$1 > 1000 && $$1 <=  N' $< | \
+		shuf | head -30 >> $@
 
 
 clean:
