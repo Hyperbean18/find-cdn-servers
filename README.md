@@ -4,6 +4,34 @@ This repository contains utilities for retrieving the hostnames of CDN
 servers used for delivering content in various web sites.
 
 
+# Dependencies
+
+This project depends on a few external tools and libraries.
+
+
+## BrowserMob Proxy
+
+To fetch web pages using a headless browser, we use [BrowserMob
+Proxy](https://github.com/lightbody/browsermob-proxy). You can
+download and install the tool in the directory `/ext` under the
+project root directory as follows.
+
+```
+➜ cd ext/
+
+➜ make
+...  https://github.com/lightbody/browsermob-proxy/releases/download/browsermob-proxy-2.1.4/browsermob-proxy-2.1.4-bin.zip
+Resolving github.com (github.com)...
+...
+...  - ‘browsermob-proxy-2.1.4-bin.zip’ saved [20115989/20115989]
+
+Archive:  browsermob-proxy-2.1.4-bin.zip
+   creating: browsermob-proxy-2.1.4/
+   creating: browsermob-proxy-2.1.4/bin/```
+   ...
+```
+
+
 ## Crawl List
 
 We use the [Hispar list](https://hispar.cs.duke.edu) and sample a set
