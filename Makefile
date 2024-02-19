@@ -1,3 +1,4 @@
+PY := python3
 
 # Use the Hispar list generated on January 28, 2021 (the most recent).
 TOPLIST := hispar-list-21-01-28
@@ -9,8 +10,9 @@ HISPAR_STATS:=tot-pages.txt	\
 	tot-sites.txt		\
 	avg-pages-per-site.txt
 
-ALL := rank-bot-20.txt \
-	crawl-info.txt
+ALL := rank-bot-20.txt		\
+	crawl-landing.txt	\
+	crawl-pages.txt
 
 
 .PHONY: all clean wipe
@@ -70,15 +72,25 @@ rank-bot-20.txt: $(TOPLIST)
 # Pick the bottom 20 landing pages.
 #
 # Store URLs selected for crawling with rank information.
-crawl-info.txt: $(TOPLIST) rank-bot-20.txt
-	@awk '$$2 == 0 && $$1 <= 20'                $< > $@
-	@awk '$$2 == 0 && $$1 >  20 && $$1 <= 100'  $< | \
-		shuf | head -10 >> $@
-	@awk '$$2 == 0 && $$1 > 100 && $$1 <= 1000' $< | \
-		shuf | head -20 >> $@
-	@awk -vN=`cat $(word 2, $^)`			 \
-	      '$$2 == 0 && $$1 > 1000 && $$1 <=  N' $< | \
-		shuf | head -30 >> $@
+crawl-landing.txt: $(TOPLIST) rank-bot-20.txt
+	@awk '$$2 == 0 && $$1 <= 20'                $<	> $@
+	@awk '$$2 == 0 && $$1 >  20 && $$1 <= 100'  $<	| \
+		shuf					| \
+		head -10				>> $@
+	@awk '$$2 == 0 && $$1 > 100 && $$1 <= 1000' $<	| \
+		shuf					| \
+		head -20				>> $@
+	@awk -vN=`cat $(word 2, $^)`			\
+	      '$$2 == 0 && $$1 > 1000 && $$1 <   N' $<	| \
+		shuf 					| \
+		head -30 				>> $@
+	@awk '$$2 == 0'                             $<	| \
+		sort -nu -k1,1	 			| \
+		tail -20				>> $@
+
+# Add internal pages to the crawl list.
+crawl-pages.txt: pick-internal.py crawl-landing.txt $(TOPLIST)
+	@$(PY) $^ $@
 
 
 clean:
