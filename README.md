@@ -83,7 +83,7 @@ of 200 URLs (with equal number of landing and internal page URLs) from
 it. You can generate a crawl list as follows.
 
 ```
-➜ make
+➜ make hispar-list-21-01-28
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
 100 1492k  100 1492k    0     0   881k      0  0:00:01  0:00:01 --:--:--  881k
