@@ -50,7 +50,7 @@ ALL := $(DATA)/rank-bot-20.txt		\
 	$(DATA)/crawl-pages.txt
 
 
-.PHONY: all gen-hars clean wipe
+.PHONY: all gen-hars wipe-hars regen-hars clean wipe
 
 
 all: $(ALL) gen-hars
@@ -140,9 +140,18 @@ $(DATA)/gen-hars.log: $(UTILS)/har-gen.py $(BMP_BIN) $(CHROME_DRV_BIN) \
 $(DATA)/hars:
 	@[ -d $@ ] || mkdir -p $@
 
+# Wipe all HAR files.
+wipe-hars:
+	@rm -rf $(DATA)/hars
+	@rm -f $(DATA)/*.log
+
+# Redo page fetches and regenerate HAR files.
+regen-hars: wipe-hars $(DATA)/gen-hars.log
+
 
 clean:
 	@rm -f $(HISPAR_STATS) ./*.log
+
 
 # Wipe everything to start all experiments from scratch.
 wipe: clean
