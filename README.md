@@ -9,12 +9,11 @@ servers used for delivering content in various web sites.
 This project depends on a few external tools and libraries.
 
 
-## BrowserMob Proxy
+## Tools for Headless browsing
 
 To fetch web pages using a headless browser, we use [BrowserMob
-Proxy](https://github.com/lightbody/browsermob-proxy). You can
-download and install the tool in the directory `/ext` under the
-project root directory as follows.
+Proxy](https://github.com/lightbody/browsermob-proxy) and
+`chromedriver`. You can download and install them as follows.
 
 ```
 ➜ cd ext/
@@ -29,6 +28,51 @@ Archive:  browsermob-proxy-2.1.4-bin.zip
    creating: browsermob-proxy-2.1.4/
    creating: browsermob-proxy-2.1.4/bin/```
    ...
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following NEW packages will be installed:
+  chromium-chromedriver
+...
+Unpacking chromium-chromedriver ...
+Setting up chromium-chromedriver ...
+```
+
+## Python libraries
+
+We use [pyenv](https://github.com/pyenv/pyenv) to manage and install
+python library dependencies. You can install `pyenv` and other python
+dependencies as follows.
+
+```
+➜ curl https://pyenv.run | bash
+
+# Load `pyenv` into the shell by adding the following lines to your
+# bash configuration (e.g., `~/.bashrc`) file.
+#
+# export PYENV_ROOT="$HOME/.pyenv"
+# [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+# eval "$(pyenv init -)"
+#
+# Restart your shell for the above configuration to take effect.
+
+➜ pyenv install 3.10.12
+Downloading Python-3.10.12.tar.xz...
+...
+Installed Python-3.10.12 to ...
+
+➜ pyenv local 3.10.12
+
+➜ pip install --upgrade pip
+...
+Collecting pip
+...
+Installing collected packages: pip
+...
+Successfully installed pip-...
+
+➜ pip3 install browsermob-proxy selenium
+Successfully installed ...
 ```
 
 
