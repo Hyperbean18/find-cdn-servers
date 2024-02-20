@@ -1,5 +1,8 @@
 PY := python3
 
+# Path to utilities.
+UTILS := utils
+
 # Use the Hispar list generated on January 28, 2021 (the most recent).
 TOPLIST := hispar-list-21-01-28
 
@@ -89,7 +92,7 @@ crawl-landing.txt: $(TOPLIST) rank-bot-20.txt
 		tail -20				>> $@
 
 # Add internal pages to the crawl list.
-crawl-pages.txt: pick-internal.py crawl-landing.txt $(TOPLIST)
+crawl-pages.txt: $(UTILS)/pick-internal.py crawl-landing.txt $(TOPLIST)
 	@$(PY) $^ $@
 
 
