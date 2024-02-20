@@ -8,6 +8,33 @@ UTILS := utils
 # Path to generated data.
 DATA := data
 
+# Path to external tools.
+EXT := ext
+
+# Path to BrowserMob proxy.
+BMP_PKG := browsermob-proxy
+BMP_VER := 2.1.4
+BMP_BIN := $(EXT)/$(BMP_PKG)-$(BMP_VER)/bin/$(BMP_PKG)
+
+# Path to chromedriver.
+CHROME_DRV_BIN := /usr/bin/chromedriver
+
+
+# Utility function to check if BrowserMob proxy is installed.
+BMP_ERR := Error: cannot find '$(BMP_BIN)' in path
+fn_bmp_check =					\
+        @which $(BMP_BIN) > /dev/null ||	\
+                (echo "$(BMP_ERR)" >& 2 &&    	\
+                        exit 1)
+
+# Utility function to check if chromedriver is installed.
+CDB_ERR := Error: cannot find '$(CHROME_DRV_BIN)' in path
+fn_cdb_check =					\
+        @which $(CHROME_DRV_BIN) > /dev/null ||	\
+                (echo "$(CDB_ERR)" >& 2 &&    	\
+                        exit 1)
+
+
 # Use the Hispar list generated on January 28, 2021 (the most recent).
 TOPLIST := hispar-list-21-01-28
 
@@ -23,10 +50,10 @@ ALL := $(DATA)/rank-bot-20.txt		\
 	$(DATA)/crawl-pages.txt
 
 
-.PHONY: all clean wipe
+.PHONY: all gen-hars clean wipe
 
 
-all: $(ALL)
+all: $(ALL) gen-hars
 
 
 # Download the web-page list.
@@ -99,6 +126,19 @@ $(DATA)/crawl-landing.txt: $(TOPLIST) $(DATA)/rank-bot-20.txt
 # Add internal pages to the crawl list.
 $(DATA)/crawl-pages.txt: $(UTILS)/pick-internal.py $(DATA)/crawl-landing.txt $(TOPLIST)
 	@$(PY) $^ $@
+
+
+# Crawl pages and generate HAR files for these page-fetches.
+gen-hars: $(DATA)/gen-hars.log
+
+$(DATA)/gen-hars.log: $(UTILS)/har-gen.py $(BMP_BIN) $(CHROME_DRV_BIN) \
+	$(DATA)/crawl-pages.txt $(DATA)/hars
+	$(call fn_bmp_check)
+	$(call fn_cdb_check)
+	@$(PY) $^ > $@
+
+$(DATA)/hars:
+	@[ -d $@ ] || mkdir -p $@
 
 
 clean:
