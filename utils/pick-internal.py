@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+"""
+Usage: pick-internal.py <crawl_file> <hispar_file> <out_file>
+
+This script scans the crawl file (with only landing-page URLs) and
+randomly samples an internal-page URL for each web site found in the
+crawl file.  The set of landing-page and internal-page URLs are then
+written out to the specified output file.
+"""
+
 
 import collections
 import io
