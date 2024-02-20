@@ -93,6 +93,10 @@ def generate_hars(hg: HARGen, crawl_list: Sequence[tuple[str, str]],
 
     # Number of pages fetched.
     num_pages = 0
+
+    # Translate extraneous characters in domain when using it for
+    # deriving output file name.
+    trans = str.maketrans({'.': '_', ':': '_'})
     
     for rank, url in crawl_list:
         beg = time.time()
@@ -104,7 +108,7 @@ def generate_hars(hg: HARGen, crawl_list: Sequence[tuple[str, str]],
         domain = urllib.parse.urlparse(url).netloc
         
         # Encode the site rank, page type, and domain name in the HAR file.
-        har_file = f"{rank}_{int_page}_{domain}".replace('.', '_') + '.har'
+        har_file = f"{rank}_{int_page}_{domain}".translate(trans) + '.har'
         out_file = os.path.sep.join((out_path, har_file))
 
         try:
