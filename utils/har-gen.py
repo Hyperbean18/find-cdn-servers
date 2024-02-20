@@ -5,6 +5,7 @@ Usage: har-gen.py
 
 from browsermobproxy import Server
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.service import Service
 from typing import Sequence
 
@@ -67,7 +68,11 @@ class HARGen:
         with details from the page fetch.
         """
         with open(harfile, 'w', encoding='utf-8') as out:
-            out.write(self.fetch(url))
+            try:
+                out.write(self.fetch(url))
+            except WebDriverException as e:
+                out.write('{}')
+                raise e
 
             
 def load_crawl_list(crawl_list: str) -> Sequence[tuple[str, str]]:
@@ -102,13 +107,18 @@ def generate_hars(hg: HARGen, crawl_list: Sequence[tuple[str, str]],
         har_file = f"{rank}_{int_page}_{domain}".replace('.', '_') + '.har'
         out_file = os.path.sep.join((out_path, har_file))
 
-        hg.run(url, out_file)
+        try:
+            hg.run(url, out_file)
 
-        elapsed = time.time() - beg
-        
+            elapsed = time.time() - beg
+
+            print(f"> spent {elapsed:.1f} second(s) to record {out_file}")
+        except WebDriverException as e:
+            err = e.msg.split('\n')[0]
+            print(f"> Error: Failed generating `{out_file}`! {err}")
+
         num_pages += 1
-        
-        print(f"> spent {elapsed:.1f} second(s) to record {out_file}")
+
         print(f"> fetched {num_pages} page(s)")
 
 
