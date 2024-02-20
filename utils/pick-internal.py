@@ -6,6 +6,12 @@ This script scans the crawl file (with only landing-page URLs) and
 randomly samples an internal-page URL for each web site found in the
 crawl file.  The set of landing-page and internal-page URLs are then
 written out to the specified output file.
+
+The output format is as follows.
+<web-site rank> <page URL>
+
+For a given web-site rank, the first entry points to the landing page
+and the second entry points to an internal page.
 """
 
 
