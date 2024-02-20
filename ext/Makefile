@@ -20,6 +20,10 @@ $(PKG)/bin/$(LIB): $(ZIP)
 	@unzip $(ZIP) && [ -f $@ ] && touch $@
 
 install: $(PKG)/bin/$(LIB)
+	@[ $$EUID -ne 0 ]					&& \
+	echo 'Warn: Install requires sudo/root privileges!' >&2 && \
+	exit 1 || exit 0
+	@apt -y install chromium-chromedriver
 
 
 clean:
