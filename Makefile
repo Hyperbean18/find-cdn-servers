@@ -53,7 +53,7 @@ $(DATA)/tot-sites.txt: $(TOPLIST)
 	@awk '{print $$1}' $< | sort -nu | wc -l > $@
 
 # Average number of pages per site in the top list.
-$(DATA)/avg-pages-per-site.txt: tot-pages.txt tot-sites.txt
+$(DATA)/avg-pages-per-site.txt: $(DATA)/tot-pages.txt $(DATA)/tot-sites.txt
 	@echo "scale=1; "				\
 		`awk '{print $$1}' $(word 1, $^)`	\
 		" / "					\
@@ -80,7 +80,7 @@ $(DATA)/rank-bot-20.txt: $(TOPLIST)
 # Pick the bottom 20 landing pages.
 #
 # Store URLs selected for crawling with rank information.
-$(DATA)/crawl-landing.txt: $(TOPLIST) rank-bot-20.txt
+$(DATA)/crawl-landing.txt: $(TOPLIST) $(DATA)/rank-bot-20.txt
 	@awk '$$2 == 0 && $$1 <= 20'                $<	> $@
 	@awk '$$2 == 0 && $$1 >  20 && $$1 <= 100'  $<	| \
 		shuf					| \
@@ -97,7 +97,7 @@ $(DATA)/crawl-landing.txt: $(TOPLIST) rank-bot-20.txt
 		tail -20				>> $@
 
 # Add internal pages to the crawl list.
-$(DATA)/crawl-pages.txt: $(UTILS)/pick-internal.py crawl-landing.txt $(TOPLIST)
+$(DATA)/crawl-pages.txt: $(UTILS)/pick-internal.py $(DATA)/crawl-landing.txt $(TOPLIST)
 	@$(PY) $^ $@
 
 
