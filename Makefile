@@ -5,19 +5,22 @@ PY := python3
 # Path to utilities.
 UTILS := utils
 
+# Path to generated data.
+DATA := data
+
 # Use the Hispar list generated on January 28, 2021 (the most recent).
 TOPLIST := hispar-list-21-01-28
 
 
 # Various simple characterizations of the Hispar list.
-HISPAR_STATS:=tot-pages.txt	\
-	min-max-site-ranks.txt	\
-	tot-sites.txt		\
-	avg-pages-per-site.txt
+HISPAR_STATS:=$(DATA)/tot-pages.txt	\
+	$(DATA)/min-max-site-ranks.txt	\
+	$(DATA)/tot-sites.txt		\
+	$(DATA)/avg-pages-per-site.txt
 
-ALL := rank-bot-20.txt		\
-	crawl-landing.txt	\
-	crawl-pages.txt
+ALL := $(DATA)/rank-bot-20.txt		\
+	$(DATA)/crawl-landing.txt	\
+	$(DATA)/crawl-pages.txt
 
 
 .PHONY: all clean wipe
@@ -37,20 +40,20 @@ $(TOPLIST):
 hispar-stats: $(HISPAR_STATS)
 
 # Total number of pages in the top list.
-tot-pages.txt: $(TOPLIST)
+$(DATA)/tot-pages.txt: $(TOPLIST)
 	@wc -l $< > $@
 
 # Min. and max. Alexa ranking of the web sites in the top list.
-min-max-site-ranks.txt: $(TOPLIST)
+$(DATA)/min-max-site-ranks.txt: $(TOPLIST)
 	@awk '{print $$1}' $< | sort -nu  | head -1  > $@
 	@awk '{print $$1}' $< | sort -nru | head -1 >> $@
 
 # Number of unique web sites in the top list.
-tot-sites.txt: $(TOPLIST)
+$(DATA)/tot-sites.txt: $(TOPLIST)
 	@awk '{print $$1}' $< | sort -nu | wc -l > $@
 
 # Average number of pages per site in the top list.
-avg-pages-per-site.txt: tot-pages.txt tot-sites.txt
+$(DATA)/avg-pages-per-site.txt: tot-pages.txt tot-sites.txt
 	@echo "scale=1; "				\
 		`awk '{print $$1}' $(word 1, $^)`	\
 		" / "					\
@@ -58,7 +61,7 @@ avg-pages-per-site.txt: tot-pages.txt tot-sites.txt
 
 
 # Get the rank of the last site before the sites with the lowest 20 ranks.
-rank-bot-20.txt: $(TOPLIST)
+$(DATA)/rank-bot-20.txt: $(TOPLIST)
 	@awk '$$2 == 0 {print $$1}' $< | sort -nu | tail -21 | head -1 > $@
 
 # Obtain a set of landing pages to crawl and look for CDN servers.
@@ -77,7 +80,7 @@ rank-bot-20.txt: $(TOPLIST)
 # Pick the bottom 20 landing pages.
 #
 # Store URLs selected for crawling with rank information.
-crawl-landing.txt: $(TOPLIST) rank-bot-20.txt
+$(DATA)/crawl-landing.txt: $(TOPLIST) rank-bot-20.txt
 	@awk '$$2 == 0 && $$1 <= 20'                $<	> $@
 	@awk '$$2 == 0 && $$1 >  20 && $$1 <= 100'  $<	| \
 		shuf					| \
@@ -94,13 +97,13 @@ crawl-landing.txt: $(TOPLIST) rank-bot-20.txt
 		tail -20				>> $@
 
 # Add internal pages to the crawl list.
-crawl-pages.txt: $(UTILS)/pick-internal.py crawl-landing.txt $(TOPLIST)
+$(DATA)/crawl-pages.txt: $(UTILS)/pick-internal.py crawl-landing.txt $(TOPLIST)
 	@$(PY) $^ $@
 
 
 clean:
-	@rm -f $(ALL) $(HISPAR_STATS)
+	@rm -f $(HISPAR_STATS) ./*.log
 
 # Wipe everything to start all experiments from scratch.
 wipe: clean
-	@rm -f $(TOPLIST)
+	@rm -f $(TOPLIST) $(ALL)
