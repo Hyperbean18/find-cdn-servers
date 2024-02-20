@@ -1,3 +1,4 @@
+SHELL := /usr/bin/bash
 
 LIB := browsermob-proxy
 VER := 2.1.4

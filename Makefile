@@ -1,3 +1,5 @@
+SHELL := /usr/bin/bash
+
 PY := python3
 
 # Path to utilities.
