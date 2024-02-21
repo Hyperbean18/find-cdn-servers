@@ -127,3 +127,47 @@ total 5976
 ➜ wc -l  crawl-pages.txt
 200 crawl-pages.txt
 ```
+
+
+# Finding CDN servers
+
+In general, you can perform all of the tasks---downloading the Hispar
+list, selecting pages to crawl, fetching them to generate the HAR
+files, and extracting the hostnames of CDN servers---by simply
+issuing `make` or `make all`.
+
+Below, we discuss how to run specific tasks.
+
+
+## Generating HAR files
+
+You can fetch the pages in the crawl list and generate the HAR files
+as follows.
+
+```
+➜ make gen-hars
+...
+```
+
+Once the page-fetches are complete, you can review the logs in
+`data/gen-hars.log`. URLs for which we could not successfully generate
+a HAR file would be clearly marked in this log file.
+
+```
+➜ head -3 data/gen-hars.log
+> spent 11.0 second(s) to record data/hars/1_0_www_google_com.har
+> fetched 1 page(s)
+> spent 10.8 second(s) to record data/hars/1_1_news_google_com.har
+
+➜ grep Error data/gen-hars.log
+> Error: Failed generating `data/hars/3739_0_www_btcmex_com_443.har`! unknown error: net::ERR_TUNNEL_CONNECTION_FAILED
+> Error: Failed generating `data/hars/3739_1_help_btcmex_com.har`! unknown error: net::ERR_TUNNEL_CONNECTION_FAILED
+> Error: Failed generating `data/hars/3800_1_pops_stumbleupon_com.har`! unknown error: net::ERR_TUNNEL_CONNECTION_FAILED
+```
+
+You can remove all the HAR files and re-run the page fetches as
+follows.
+
+```
+➜ make regen-hars
+```
