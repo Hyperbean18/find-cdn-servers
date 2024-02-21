@@ -53,8 +53,13 @@ HISPAR_STATS := $(DATA)/tot-pages.txt	\
 	$(DATA)/tot-sites.txt		\
 	$(DATA)/avg-pages-per-site.txt
 
+
+# CDN server names.
+CDN_HOSTS := $(DATA)/cdn-domains.txt \
+	$(DATA)/cdn-domains-w-whois.txt
+
 # Various simple characterizations of the CDN hostnames discovered.
-CDN_STATS := $(DATA)/cdn-hostnames-uniq.txt
+CDN_STATS := $(DATA)/cdn-domains-uniq.txt
 
 
 ALL := $(DATA)/rank-bot-20.txt		\
@@ -161,18 +166,28 @@ wipe-hars:
 regen-hars: wipe-hars $(DATA)/gen-hars.log
 
 
-get-cdns: $(DATA)/cdn-hostnames.txt
+# Obtain CDN domains from HAR files and characterize the data set.
+get-cdns: $(CDN_HOSTS) $(CDN_STATS)
 
-
-# Extract the hostnames from the HAR files and identify which CDN they
+# Extract the domains from the HAR files and identify which CDN they
 # correspond to.
-$(DATA)/cdn-hostnames.txt: $(UTILS)/get_cdn.py $(HAR_FILES)
+$(DATA)/cdn-domains.txt: $(UTILS)/get_cdn.py $(HAR_FILES)
 	@$(PLL) $(PLL_OPTS) $(PY) $(word 1, $^) -f {} ::: $(HAR_FILES) > $@
+
+# Try to resolve domains of `UNKNOWN` CDNs using `whois` as an extra
+# effort to identify the CDNs.
+$(DATA)/cdn-domains-w-whois.txt: $(UTILS)/whois-lookup.py \
+	$(DATA)/cdn-domains.txt
+	@$(PY) $^ $@ 2> whois-lookup.log
+
+# Filter out duplicates per page fetch.
+$(DATA)/cdn-domains-uniq.txt: $(DATA)/cdn-domains-w-whois.txt
+	@sort $< | uniq -c | sort -k1nr,1 -k4,4 -k2,2 > $@
 
 
 clean:
 	@rm -f $(HISPAR_STATS)
-	@rm -f $(DATA)/cdn-hostnames.txt
+	@rm -f $(CDN_HOSTS) $(CDN_STATS)
 	@rm -f ./*.log
 
 
