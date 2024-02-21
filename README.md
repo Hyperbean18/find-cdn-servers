@@ -101,7 +101,10 @@ total 5976
 -rw-rw-r-- 1 balac balac       5 Feb 19 15:40 rank-bot-20.txt
 -rw-rw-r-- 1 balac balac     351 Feb 19 15:40 README.md
 
-➜ head crawl-pages.txt
+➜ make data/crawl-pages.txt
+...
+
+➜ head data/crawl-pages.txt
 1 http://www.google.com/
 1 https://domains.google.com/registrar
 2 https://www.youtube.com/
@@ -112,6 +115,14 @@ total 5976
 4 https://ir.baidu.com/node/11486/html
 5 https://www.qq.com?fromdefault
 5 https://www.roblox.qq.com/badges/48836625/Headshot
+
+# The format of the crawl list is as follows.
+# <web-site rank> <URL>
+#
+# There will be two entries for each web-site rank.
+# The first entry is the landing page, whereas the second one is the
+# URL of a randomly chosen internal page (from the Hispar list for the
+# associated web site).
 
 ➜ wc -l  crawl-pages.txt
 200 crawl-pages.txt
