@@ -135,6 +135,7 @@ def resolve_unknowns(cdn_recs, out):
         if not srv_ip:
             # Retain the original record as such!
             out.write(f"{rec}\n")
+            continue
 
         # Identify CDN information using a `whois` lookup.
         if srv_ip not in ip_to_cdn_cache:
@@ -144,6 +145,7 @@ def resolve_unknowns(cdn_recs, out):
         if not cdn:
             # Retain the original record as such!
             out.write(f"{rec}\n")
+            continue
 
         # Retain the original record as such!
         out.write(f"{har_file} {domain} {cdn}\n")
