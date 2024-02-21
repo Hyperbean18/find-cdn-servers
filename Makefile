@@ -55,9 +55,10 @@ HISPAR_STATS := $(DATA)/tot-pages.txt	\
 
 
 # CDN server names.
-CDN_HOSTS := $(DATA)/cdn-domains.txt	\
-	$(DATA)/cdn-domains-w-whois.txt \
-	$(DATA)/top-cdn-domains-w-whois.txt
+CDN_HOSTS := $(DATA)/cdn-domains.txt		\
+	$(DATA)/cdn-domains-w-whois.txt		\
+	$(DATA)/top-cdn-domains-w-whois.txt	\
+	$(DATA)/cdn-targets-info.txt
 
 # Various simple characterizations of the CDN hostnames discovered.
 CDN_STATS := $(DATA)/cdn-domains-uniq.txt		\
@@ -205,6 +206,11 @@ $(DATA)/cdn-num-domain-names.txt: $(DATA)/cdn-domain-names.txt
 # Filter domain names of top CDNs.
 $(DATA)/top-cdn-domains-w-whois.txt: $(DATA)/cdn-domains-w-whois.txt
 	@awk '$$3~/(Google|Amazon|Cloudflare|Akamai|Fastly)/' $< > $@
+
+# Cherry-pick 100 CDN domains from the candidate list.
+$(DATA)/cdn-targets-info.txt: $(UTILS)/pick-cdn-domains.py \
+	$(DATA)/top-cdn-domains-w-whois.txt
+	@$(PY) $^ $@
 
 
 # Filter the UNKNOWN CDN domains _prior_ to using `whois`.
