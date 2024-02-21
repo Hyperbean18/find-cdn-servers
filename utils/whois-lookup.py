@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
+Usage: whois-lookup.py <CDN-domains-file> <output-file>
+
 Looks up the domain names of unknown CDNs using `whois` as a
 last-resort to identify whether the IP address to which the domain
 name resolves is owned by a known CDN.
-
-Usage: ./whois-lookup.py <CDN-domains-file> <output-file>
 """
 
 __author__ = "Vaibhav Ghanatra"
