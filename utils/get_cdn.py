@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
+Usage: get_cdn.py -f <har-file>
+
 Figures out which CDNs were involved in a webpage fetch given HAR file.
 Requires dnspython
 
 Borrows heavily from https://github.com/turbobytes/cdnfinder
 Thank you to cdnplanet.com
-
-Usage: ./get_cdn.py -f har-file
-Or you could just import the get_cdn function
 """
 
 __author__ = "Waqar Aqeel"
