@@ -55,8 +55,9 @@ HISPAR_STATS := $(DATA)/tot-pages.txt	\
 
 
 # CDN server names.
-CDN_HOSTS := $(DATA)/cdn-domains.txt \
-	$(DATA)/cdn-domains-w-whois.txt
+CDN_HOSTS := $(DATA)/cdn-domains.txt	\
+	$(DATA)/cdn-domains-w-whois.txt \
+	$(DATA)/top-cdn-domains-w-whois.txt
 
 # Various simple characterizations of the CDN hostnames discovered.
 CDN_STATS := $(DATA)/cdn-domains-uniq.txt		\
@@ -200,6 +201,10 @@ $(DATA)/cdn-domain-names.txt: $(DATA)/cdn-domains-uniq.txt
 # Count the unique CDN domain names across all pages.
 $(DATA)/cdn-num-domain-names.txt: $(DATA)/cdn-domain-names.txt
 	@wc -l $< > $@
+
+# Filter domain names of top CDNs.
+$(DATA)/top-cdn-domains-w-whois.txt: $(DATA)/cdn-domains-w-whois.txt
+	@awk '$$3~/(Google|Amazon|Cloudflare|Akamai|Fastly)/' $< > $@
 
 
 # Filter the UNKNOWN CDN domains _prior_ to using `whois`.
