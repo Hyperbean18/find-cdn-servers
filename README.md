@@ -76,7 +76,7 @@ Successfully installed ...
 ```
 
 
-## Crawl List
+## Crawl list
 
 We use the [Hispar list](https://hispar.cs.duke.edu) and sample a set
 of 200 URLs (with equal number of landing and internal page URLs) from
