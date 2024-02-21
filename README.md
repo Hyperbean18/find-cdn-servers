@@ -73,7 +73,18 @@ Successfully installed pip-...
 
 ➜ pip install browsermob-proxy selenium
 Successfully installed ...
+
+➜ pip install dnspython
+Successfully installed ...
 ```
+
+
+## Unix/Linux tools
+
+We use the [GNU parallel](https://www.gnu.org/software/parallel/)
+utility for running some of the data-processing tasks in parallel. You
+can install it manually from the source or using your system's package
+manager.
 
 
 ## Crawl list
@@ -170,4 +181,21 @@ follows.
 
 ```
 ➜ make regen-hars
+```
+
+
+# Identifying CDNs from HAR files
+
+We use the excellent
+[get_cdn.py](https://gist.github.com/waqaraqeel/9368bb0711a67ce17aec367448ac65e6)
+utility (with some minor modifications) to parse the URLs of objects
+in the HAR files and identify the CDNs.
+
+```
+➜ make get-cdns
+
+
+➜ head -2 data/cdn-hostnames.txt
+1_0_www_google_com.har www.google.com. Google
+1_0_www_google_com.har www.google.com. Google
 ```

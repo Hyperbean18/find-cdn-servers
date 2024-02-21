@@ -2,11 +2,19 @@ SHELL := /usr/bin/bash
 
 PY := python3
 
+PLL := parallel
+# GNU parallel options.
+PLL_OPTS := --line-buffer -j4
+
 # Path to utilities.
 UTILS := utils
 
 # Path to generated data.
 DATA := data
+# Path to HAR files.
+HAR_DIR := $(DATA)/hars
+# Set of all HAR files.
+HAR_FILES := $(wildcard $(HAR_DIR)/*.har)
 
 # Path to external tools.
 EXT := ext
@@ -40,20 +48,24 @@ TOPLIST := hispar-list-21-01-28
 
 
 # Various simple characterizations of the Hispar list.
-HISPAR_STATS:=$(DATA)/tot-pages.txt	\
+HISPAR_STATS := $(DATA)/tot-pages.txt	\
 	$(DATA)/min-max-site-ranks.txt	\
 	$(DATA)/tot-sites.txt		\
 	$(DATA)/avg-pages-per-site.txt
+
+# Various simple characterizations of the CDN hostnames discovered.
+CDN_STATS := $(DATA)/cdn-hostnames-uniq.txt
+
 
 ALL := $(DATA)/rank-bot-20.txt		\
 	$(DATA)/crawl-landing.txt	\
 	$(DATA)/crawl-pages.txt
 
 
-.PHONY: all gen-hars wipe-hars regen-hars clean wipe
+.PHONY: all gen-hars wipe-hars regen-hars get-cdns clean wipe
 
 
-all: $(ALL) gen-hars
+all: $(ALL) gen-hars get-cdns
 
 
 # Download the web-page list.
@@ -132,25 +144,36 @@ $(DATA)/crawl-pages.txt: $(UTILS)/pick-internal.py $(DATA)/crawl-landing.txt $(T
 gen-hars: $(DATA)/gen-hars.log
 
 $(DATA)/gen-hars.log: $(UTILS)/har-gen.py $(BMP_BIN) $(CHROME_DRV_BIN) \
-	$(DATA)/crawl-pages.txt $(DATA)/hars
+	$(DATA)/crawl-pages.txt $(HAR_DIR)
 	$(call fn_bmp_check)
 	$(call fn_cdb_check)
 	@$(PY) $^ > $@
 
-$(DATA)/hars:
+$(HAR_DIR):
 	@[ -d $@ ] || mkdir -p $@
 
 # Wipe all HAR files.
 wipe-hars:
-	@rm -rf $(DATA)/hars
+	@rm -rf $(HAR_DIR)
 	@rm -f $(DATA)/*.log
 
 # Redo page fetches and regenerate HAR files.
 regen-hars: wipe-hars $(DATA)/gen-hars.log
 
 
+get-cdns: $(DATA)/cdn-hostnames.txt
+
+
+# Extract the hostnames from the HAR files and identify which CDN they
+# correspond to.
+$(DATA)/cdn-hostnames.txt: $(UTILS)/get_cdn.py $(HAR_FILES)
+	@$(PLL) $(PLL_OPTS) $(PY) $(word 1, $^) -f {} ::: $(HAR_FILES) > $@
+
+
 clean:
-	@rm -f $(HISPAR_STATS) ./*.log
+	@rm -f $(HISPAR_STATS)
+	@rm -f $(DATA)/cdn-hostnames.txt
+	@rm -f ./*.log
 
 
 # Wipe everything to start all experiments from scratch.
