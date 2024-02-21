@@ -59,7 +59,12 @@ CDN_HOSTS := $(DATA)/cdn-domains.txt \
 	$(DATA)/cdn-domains-w-whois.txt
 
 # Various simple characterizations of the CDN hostnames discovered.
-CDN_STATS := $(DATA)/cdn-domains-uniq.txt
+CDN_STATS := $(DATA)/cdn-domains-uniq.txt		\
+	$(DATA)/cdn-domain-names.txt			\
+	$(DATA)/cdn-num-domain-names.txt		\
+	$(DATA)/domains-per-cdn.txt			\
+	$(DATA)/cdn-num-uniq-unk-domains-bef-whois.txt	\
+	$(DATA)/cdn-num-uniq-unk-domains-aft-whois.txt
 
 
 ALL := $(DATA)/rank-bot-20.txt		\
@@ -183,6 +188,37 @@ $(DATA)/cdn-domains-w-whois.txt: $(UTILS)/whois-lookup.py \
 # Filter out duplicates per page fetch.
 $(DATA)/cdn-domains-uniq.txt: $(DATA)/cdn-domains-w-whois.txt
 	@sort $< | uniq -c | sort -k1nr,1 -k4,4 -k2,2 > $@
+
+# Retrieve counts of domains per CDN.
+$(DATA)/domains-per-cdn.txt: $(DATA)/cdn-domains-uniq.txt
+	@awk '{print $$4}' $< | sort | uniq -c | sort -nr -k1,1 > $@
+
+# Extract unique CDN domain names (and drop all other information).
+$(DATA)/cdn-domain-names.txt: $(DATA)/cdn-domains-uniq.txt
+	@awk '{print $$3}' $< | sort -u > $@
+
+# Count the unique CDN domain names across all pages.
+$(DATA)/cdn-num-domain-names.txt: $(DATA)/cdn-domain-names.txt
+	@wc -l $< > $@
+
+
+# Filter the UNKNOWN CDN domains _prior_ to using `whois`.
+$(DATA)/cdn-unk-domains-bef-whois.txt: $(DATA)/cdn-domains.txt
+	@awk '$$3 == "UNKNOWN" {print $$1, $$2}' $< | \
+	sed -E 's/^([0-9]+)_([0-9]+)_(.*)/\1 \2 \3/' > $@
+
+# Filter the UNKNOWN CDN domains _after_ using `whois`.
+$(DATA)/cdn-unk-domains-aft-whois.txt: $(DATA)/cdn-domains-w-whois.txt
+	@awk '$$3 == "UNKNOWN" {print $$1, $$2}' $< | \
+	sed -E 's/^([0-9]+)_([0-9]+)_(.*)/\1 \2 \3/' > $@
+
+# Filter the unique UNKNOWN CDN domains prior to or after using `whois`.
+$(DATA)/cdn-uniq-unk-%-whois.txt: $(DATA)/cdn-unk-%-whois.txt
+	@awk '{print $$4}' $< | sort -u > $@
+
+# Count the unique UNKNOWN CDN domains prior to or after using `whois`.
+$(DATA)/cdn-num-%-whois.txt: $(DATA)/cdn-%-whois.txt
+	@wc -l $< > $@
 
 
 clean:
