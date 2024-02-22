@@ -22,6 +22,10 @@ import collections
 import random
 
 
+# Select set of CDNs.
+SEL_CDNS = ('Akamai', 'Amazon-Cloudfront', 'Cloudflare', 'Google', 'Fastly')
+
+
 def get_rank(file_name: str) -> int:
     """Decode the HAR filename to extract the web-site ranking.
     """
