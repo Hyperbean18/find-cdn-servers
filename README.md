@@ -186,16 +186,67 @@ follows.
 
 # Identifying CDNs from HAR files
 
-We use the excellent
-[get_cdn.py](https://gist.github.com/waqaraqeel/9368bb0711a67ce17aec367448ac65e6)
-utility (with some minor modifications) to parse the URLs of objects
-in the HAR files and identify the CDNs.
+You can extract the URLs from HAR files, identify the CDNs used for
+serving various objects, refine the CDN discovery process, and
+cherry-pick CDNs for further experiments by calling the `get-cdns`
+target.
 
 ```
 ➜ make get-cdns
+```
 
+We use the excellent
+[get_cdn.py](https://gist.github.com/waqaraqeel/9368bb0711a67ce17aec367448ac65e6)
+utility (with some minor modifications) to parse the URLs of objects
+in the HAR files and identify the CDNs. The details of each domain
+name, its associated CDN (if any) are stored along with details of the
+web site where they were discovered.
 
-➜ head -2 data/cdn-hostnames.txt
+```
+➜ head -2 data/cdn-domains.txt
 1_0_www_google_com.har www.google.com. Google
 1_0_www_google_com.har www.google.com. Google
+```
+
+Since the process of determining the domains of various CDNs is based
+on a set of heuristics, occasionally, it might result in conflicting
+mappings. We resolve these mappings using majority voting.
+
+```
+➜ head -3 data/cdn-domains-fixed.txt
+1_0_www_google_com.har www.google.com. Google
+1_0_www_google_com.har www.google.com. Google
+1_0_www_google_com.har www.google.com. Google
+
+# The conflict resolution process logs its actions to a file, in case
+# we need it later for reviewing the CDN details.
+
+➜ grep '^CONFLICT' data/cdn-domains-conflicts.log | head -3
+CONFLICT: Remove www.amazon.com. -> UNKNOWN mapping
+CONFLICT: Resolve www.amazon.com. -> Amazon-Cloudfront; options: Amazon-Cloudfront(1)
+CONFLICT: Remove m.media-amazon.com. -> UNKNOWN mapping
+```
+
+We also use `whois` lookups to identify the CDNs when the domain names
+are not much helpful. The results of these refinements can be found in
+`data/cdn-domains-w-whois.txt`.
+
+```
+➜ head -3 data/cdn-domains-w-whois.txt
+1_0_www_google_com.har www.google.com. Google
+1_0_www_google_com.har www.google.com. Google
+1_0_www_google_com.har www.google.com. Google
+```
+
+We finally cherry-pick a set of 100 CDN targets and store them in the
+file `data/cdn-targets-info.txt`; the file stores the highest and
+lowest ranks of web sites where each CDN domain or server name was
+discovered. The manner in which we pick these targets is documented in
+`utils/pick-cdn-domains.py` (function: `cherry_pick_doms`).
+
+```
+$ head -3 data/cdn-targets-info.txt
+acdn.adnxs.com. 89 3817
+googleads.g.doubleclick.net. 6 3820
+pm.w55c.net. 243 243
 ```
