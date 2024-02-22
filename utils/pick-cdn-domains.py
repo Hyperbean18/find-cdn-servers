@@ -40,7 +40,7 @@ def get_rank(file_name: str) -> int:
     return int(rank)
 
 
-def group_doms_by_rank(dom_file: str) -> dict[int, str]:
+def group_doms_by_rank(dom_file: str) -> dict[int, dict[str, set[str]]]:
     """Loads CDN domains and associated information from the given
     file.
 
@@ -50,11 +50,19 @@ def group_doms_by_rank(dom_file: str) -> dict[int, str]:
     lines = (line.strip().split() for line in
              open(dom_file, 'r', encoding='utf-8'))
 
-    # Domains grouped by web-site rank.
-    rank_doms = collections.defaultdict(set)
+    # Domains grouped by web-site rank and then by CDN.
+    rank_doms = {}
 
-    for file_name, cdn_dom, _cdn in lines:
-        rank_doms[get_rank(file_name)].add(cdn_dom)
+    for file_name, cdn_dom, cdn in lines:
+        rank = get_rank(file_name)
+
+        if rank not in rank_doms:
+            rank_doms[rank] = {}
+
+        if cdn not in rank_doms[rank]:
+            rank_doms[rank][cdn] = set()
+
+        rank_doms[rank][cdn].add(cdn_dom)
 
     return rank_doms
 
@@ -85,12 +93,24 @@ def map_dom_to_cdn(doms: set[str], dom_file: str) -> dict[str, str]:
     return dom_to_cdn
 
 
-def doms_by_rank(dom_info: dict[int, str], rbeg: int, rend: int) -> set[str]:
+def doms_by_rank(cdn: str, dom_info: dict[int, dict[str, set[str]]],
+                 rbeg: int, rend: int) -> set[str]:
     """Return the set of domains associated with ranks in the range
     given by [rbeg, rend].
     """
     ranks = list(range(rbeg, rend + 1))
-    return set([d for r in ranks for d in dom_info[r] if r in dom_info])
+
+    doms = set()
+    for r in ranks:
+        if r not in dom_info:
+            continue
+
+        if cdn not in dom_info[r]:
+            continue
+
+        doms.update(dom_info[r][cdn])
+
+    return doms
 
 
 def sample_doms(doms: set[str], size: int) -> list[str]:
@@ -113,39 +133,45 @@ def sample_doms(doms: set[str], size: int) -> list[str]:
     return samples
 
 
-def sample_doms_in_range(doms: dict[int, str], size: int,
-                         rbeg: int, rend:int,
+def sample_doms_in_range(cdn: str,
+                         doms: dict[int, dict[str, set[str]]],
+                         size: int,
+                         rbeg: int,
+                         rend:int,
                          existing: set[str]) -> list[str]:
     """Sample domains uniformly at random from sites of ranks in the
     range defined by [rbeg, rend].
     """
-    candidates = doms_by_rank(doms, rbeg, rend)
+    candidates = doms_by_rank(cdn, doms, rbeg, rend)
     return sample_doms(candidates - existing, size)
 
 
-def get_rank_ranges(dom_info: dict[int, str]) -> dict[str, tuple[int, int]]:
+def get_rank_ranges(dom_info: dict[int, dict[str, set[str]]]
+                    ) -> dict[str, tuple[int, int]]:
     """Find the highest and lowest rank of web sites associated with
     each CDN domain.
     """
     rank_ranges = {}
     
     for rank in dom_info:
-        for dom in dom_info[rank]:
-            if dom not in rank_ranges:
-                hi_rank, lo_rank = rank, rank
-            else:
-                hi_rank, lo_rank = rank_ranges[dom]
-                if rank < hi_rank:
-                    hi_rank = rank
-                elif rank > lo_rank:
-                    lo_rank = rank
-                    
-            rank_ranges[dom] = hi_rank, lo_rank
-            
+        for cdn in dom_info[rank]:
+            for dom in dom_info[rank][cdn]:
+                if dom not in rank_ranges:
+                    hi_rank, lo_rank = rank, rank
+                else:
+                    hi_rank, lo_rank = rank_ranges[dom]
+                    if rank < hi_rank:
+                        hi_rank = rank
+                    elif rank > lo_rank:
+                        lo_rank = rank
+
+                rank_ranges[dom] = hi_rank, lo_rank
+
     return rank_ranges
 
 
-def cherry_pick_doms(dom_info: dict[int, str]) -> dict[str, tuple[int, int]]:
+def cherry_pick_doms(dom_info: dict[int, dict[str, set[str]]]
+                     ) -> dict[str, tuple[int, int]]:
     """Cherry-pick domains from the dict of available domains (grouped
     by web-site rank) based on a pre-defined sampling algorithm.
     """
@@ -163,20 +189,32 @@ def cherry_pick_doms(dom_info: dict[int, str]) -> dict[str, tuple[int, int]]:
     # Cherry-picked domains.
     doms = set()
 
+    n = len(SEL_CDNS)
+
     # Sample 10 CDN domains from sites with rank in [1, 20].
-    doms.update(sample_doms_in_range(dom_info, 20, 1, 20, doms))
+    for cdn in SEL_CDNS:
+        doms.update(sample_doms_in_range(cdn, dom_info, 20/n,
+                                         1, 20, doms))
 
     # Sample 10 CDN domains from sites with rank in (20, 100].
-    doms.update(sample_doms_in_range(dom_info, 10, 21, 100, doms))
+    for cdn in SEL_CDNS:
+        doms.update(sample_doms_in_range(cdn, dom_info, 10/n,
+                                         21, 100, doms))
 
     # Sample 20 CDN domains from sites with rank in (100, 1000].
-    doms.update(sample_doms_in_range(dom_info, 20, 101, 1000, doms))
+    for cdn in SEL_CDNS:
+        doms.update(sample_doms_in_range(cdn, dom_info, 20/n,
+                                         101, 1000, doms))
 
     # Sample 30 CDN domains from sites with rank in (1000, bottom-20).
-    doms.update(sample_doms_in_range(dom_info, 30, 1001, last_21, doms))
+    for cdn in SEL_CDNS:
+        doms.update(sample_doms_in_range(cdn, dom_info, 30/n,
+                                         1001, last_21, doms))
 
     # Sample 20 CDN domains from sites with rank in [bottom-20, bottom].
-    doms.update(sample_doms_in_range(dom_info, 20, last_20, last, doms))
+    for cdn in SEL_CDNS:
+        doms.update(sample_doms_in_range(cdn, dom_info, 20/n,
+                                         last_20, last, doms))
 
     return {d: tuple(rank_ranges[d]) for d in doms}
 
