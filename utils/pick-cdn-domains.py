@@ -54,7 +54,7 @@ def group_doms_by_rank(dom_file: str) -> dict[int, str]:
 
     return rank_doms
 
-def map_doms_to_cdn(doms: set[str], dom_file: str) -> dict[str, str]:
+def map_dom_to_cdn(doms: set[str], dom_file: str) -> dict[str, str]:
     """Return a mapping between a set of CDN domains to the CDN names
     from the given domains data file.
 
@@ -186,10 +186,10 @@ def _main(*args):
     with open(out_file, 'w', encoding='utf-8') as f:
         # Sample CDN domains using a pre-defined policy.
         doms = cherry_pick_doms(dom_info)
-        doms_to_cdn = map_doms_to_cdn(doms, dom_file)
+        dom_to_cdn = map_dom_to_cdn(doms, dom_file)
 
         for dom, (hi_rank, lo_rank) in doms.items():
-            f.write(f"{dom} {hi_rank} {lo_rank}\n")
+            f.write(f"{dom} {dom_to_cdn[dom]} {hi_rank} {lo_rank}\n")
 
 
 if __name__ == '__main__':
