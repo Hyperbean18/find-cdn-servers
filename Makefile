@@ -192,7 +192,7 @@ $(DATA)/cdn-domains-fixed.txt: $(UTILS)/fix-cdn-info.py $(DATA)/cdn-domains.txt
 # effort to identify the CDNs.
 $(DATA)/cdn-domains-w-whois.txt: $(UTILS)/whois-lookup.py \
 	$(DATA)/cdn-domains-fixed.txt
-	@$(PY) $^ $@ 2> whois-lookup.log
+	@$(PY) $^ $@ 2> $(DATA)/whois-lookup.log
 
 # Filter out duplicates per page fetch.
 $(DATA)/cdn-domains-uniq.txt: $(DATA)/cdn-domains-w-whois.txt
