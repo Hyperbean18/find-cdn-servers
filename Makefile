@@ -56,6 +56,7 @@ HISPAR_STATS := $(DATA)/tot-pages.txt	\
 
 # CDN server names.
 CDN_HOSTS := $(DATA)/cdn-domains.txt		\
+	$(DATA)/cdn-domains-fixed.txt		\
 	$(DATA)/cdn-domains-w-whois.txt		\
 	$(DATA)/top-cdn-domains-w-whois.txt	\
 	$(DATA)/cdn-targets-info.txt
@@ -181,10 +182,16 @@ get-cdns: $(CDN_HOSTS) $(CDN_STATS)
 $(DATA)/cdn-domains.txt: $(UTILS)/get_cdn.py $(HAR_FILES)
 	@$(PLL) $(PLL_OPTS) $(PY) $(word 1, $^) -f {} ::: $(HAR_FILES) > $@
 
+# Resolve issues in the domain-name-to-CDN mappings.
+# (For various reasons a given domain name might be associated with
+#  more than one CDN. Use majority vote to resolve conflicts.)
+$(DATA)/cdn-domains-fixed.txt: $(UTILS)/fix-cdn-info.py $(DATA)/cdn-domains.txt
+	@$(PY) $^ $@ 2> $(DATA)/cdn-domains-conflicts.log
+
 # Try to resolve domains of `UNKNOWN` CDNs using `whois` as an extra
 # effort to identify the CDNs.
 $(DATA)/cdn-domains-w-whois.txt: $(UTILS)/whois-lookup.py \
-	$(DATA)/cdn-domains.txt
+	$(DATA)/cdn-domains-fixed.txt
 	@$(PY) $^ $@ 2> whois-lookup.log
 
 # Filter out duplicates per page fetch.
@@ -214,7 +221,7 @@ $(DATA)/cdn-targets-info.txt: $(UTILS)/pick-cdn-domains.py \
 
 
 # Filter the UNKNOWN CDN domains _prior_ to using `whois`.
-$(DATA)/cdn-unk-domains-bef-whois.txt: $(DATA)/cdn-domains.txt
+$(DATA)/cdn-unk-domains-bef-whois.txt: $(DATA)/cdn-domains-fixed.txt
 	@awk '$$3 == "UNKNOWN" {print $$1, $$2}' $< | \
 	sed -E 's/^([0-9]+)_([0-9]+)_(.*)/\1 \2 \3/' > $@
 
@@ -234,7 +241,7 @@ $(DATA)/cdn-num-%-whois.txt: $(DATA)/cdn-%-whois.txt
 
 clean:
 	@rm -f $(HISPAR_STATS)
-	@rm -f $(CDN_HOSTS) $(CDN_STATS)
+	@rm -f $(CDN_HOSTS) $(CDN_STATS) $(DATA)/cdn-domains-conflicts.log
 	@rm -f ./*.log
 
 
