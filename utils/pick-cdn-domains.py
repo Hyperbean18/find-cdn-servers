@@ -191,7 +191,7 @@ def cherry_pick_doms(dom_info: dict[int, dict[str, set[str]]]
 
     n = len(SEL_CDNS)
 
-    # Sample 10 CDN domains from sites with rank in [1, 20].
+    # Sample 20 CDN domains from sites with rank in [1, 20].
     for cdn in SEL_CDNS:
         doms.update(sample_doms_in_range(cdn, dom_info, 20/n,
                                          1, 20, doms))
