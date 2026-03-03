@@ -70,7 +70,7 @@ CDN_STATS := $(DATA)/cdn-domains-uniq.txt		\
 	$(DATA)/cdn-num-uniq-unk-domains-aft-whois.txt
 
 
-ALL := $(DATA)/rank-bot-20.txt		\
+ALL := $(DATA)/rank-bot-25.txt		\
 	$(DATA)/crawl-landing.txt	\
 	$(DATA)/crawl-pages.txt
 
@@ -116,7 +116,7 @@ $(DATA)/avg-pages-per-site.txt: $(DATA)/tot-pages.txt $(DATA)/tot-sites.txt
 
 # Get the rank of the last site before the sites with the lowest 20 ranks.
 $(DATA)/rank-bot-25.txt: $(TOPLIST)
- 	@awk ' {print $$1}' $< | sort -nu | tail -26 | head -1 > $@
+	@awk -F, ' {print $$1}' $< | sort -nu | tail -26 | head -1 > $@
 
 # Obtain a set of landing pages to crawl and look for CDN servers.
 #
@@ -134,20 +134,19 @@ $(DATA)/rank-bot-25.txt: $(TOPLIST)
 # Pick the bottom 20 landing pages.
 #
 # Store URLs selected for crawling with rank information.
-$(DATA)/crawl-landing.txt: $(TOPLIST) $(DATA)/rank-bot-25.txt
-	@awk '$$2 == 0 && $$1 <= 25'                $<  > $@
-	@awk '$$2 == 0 && $$1 >  25 && $$1 <= 10000'  $<  | \
+$(DATA)/crawl-landing.txt: $(TOPLIST)
+	@awk -F, '$$1 <= 25'                          $<  > $@
+	@awk -F, '$$1 >  25 && $$1 <= 10000'          $<  | \
 		shuf                    | \
 		head -30                >> $@
-	@awk '$$2 == 0 && $$1 > 10000 && $$1 <= 500000' $<  | \
+	@awk -F, '$$1 > 10000 && $$1 <= 500000'       $<  | \
 		shuf                    | \
 		head -50                >> $@
-	@awk -vN=`cat $(word 2, $^)`            \
-		  '$$2 == 0 && $$1 > 500000 && $$1 <   N' $<  | \
+	@awk -F, '$$1 > 500000 && $$1 <= 999975'      $<  | \
 		shuf                    | \
 		head -70                >> $@
-	@awk '$$2 == 0'                             $<  | \
-		sort -nu -k1,1              | \
+	@awk -F, '$$1 > 999975'                        $<  | \
+		sort -t, -n -k1,1       | \
 		tail -25                >> $@
 
 # Add internal pages to the crawl list.
