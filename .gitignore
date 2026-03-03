@@ -4,3 +4,4 @@
 /hispar-list-*
 /data/
 /tests/
+*/*.log

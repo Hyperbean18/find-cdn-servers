@@ -163,6 +163,7 @@ def _main(*args) -> None:
 if __name__ == '__main__':
     import sys
 
+    sys.stderr.write("Started")
     args = sys.argv[1:]
     if len(args) != 2:
         sys.stderr.write(f"Usage: {sys.argv[0]}"

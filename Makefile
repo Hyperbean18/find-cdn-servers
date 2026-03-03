@@ -25,7 +25,7 @@ BMP_VER := 2.1.4
 BMP_BIN := $(EXT)/$(BMP_PKG)-$(BMP_VER)/bin/$(BMP_PKG)
 
 # Path to chromedriver.
-CHROME_DRV_BIN := /usr/bin/chromedriver
+CHROME_DRV_BIN := $(EXT)/chromedriver
 
 
 # Utility function to check if BrowserMob proxy is installed.
@@ -44,8 +44,8 @@ fn_cdb_check =					\
 
 
 # Use the Hispar list generated on January 28, 2021 (the most recent).
-TOPLIST := hispar-list-21-01-28
-
+# TOPLIST := hispar-list-21-01-28
+TOPLIST := top-1m.csv
 
 # Various simple characterizations of the Hispar list.
 HISPAR_STATS := $(DATA)/tot-pages.txt	\
@@ -83,9 +83,11 @@ all: $(ALL) gen-hars get-cdns
 
 # Download the web-page list.
 $(TOPLIST):
-	@curl -O https://hispar.cs.duke.edu/archive/$@.zip	&& \
-	unzip $@.zip						&& \
-	rm -f $@.zip
+	echo "something is going wrong" && \
+	exit -1
+# 	@curl -O https://hispar.cs.duke.edu/archive/$@.zip	&& \
+# 	unzip $@.zip						&& \
+# 	rm -f $@.zip
 
 
 # Characterize the Hispar list.
@@ -113,8 +115,8 @@ $(DATA)/avg-pages-per-site.txt: $(DATA)/tot-pages.txt $(DATA)/tot-sites.txt
 
 
 # Get the rank of the last site before the sites with the lowest 20 ranks.
-$(DATA)/rank-bot-20.txt: $(TOPLIST)
-	@awk '$$2 == 0 {print $$1}' $< | sort -nu | tail -21 | head -1 > $@
+$(DATA)/rank-bot-25.txt: $(TOPLIST)
+ 	@awk ' {print $$1}' $< | sort -nu | tail -26 | head -1 > $@
 
 # Obtain a set of landing pages to crawl and look for CDN servers.
 #
@@ -132,32 +134,34 @@ $(DATA)/rank-bot-20.txt: $(TOPLIST)
 # Pick the bottom 20 landing pages.
 #
 # Store URLs selected for crawling with rank information.
-$(DATA)/crawl-landing.txt: $(TOPLIST) $(DATA)/rank-bot-20.txt
-	@awk '$$2 == 0 && $$1 <= 20'                $<	> $@
-	@awk '$$2 == 0 && $$1 >  20 && $$1 <= 100'  $<	| \
-		shuf					| \
-		head -10				>> $@
-	@awk '$$2 == 0 && $$1 > 100 && $$1 <= 1000' $<	| \
-		shuf					| \
-		head -20				>> $@
-	@awk -vN=`cat $(word 2, $^)`			\
-	      '$$2 == 0 && $$1 > 1000 && $$1 <   N' $<	| \
-		shuf 					| \
-		head -30 				>> $@
-	@awk '$$2 == 0'                             $<	| \
-		sort -nu -k1,1	 			| \
-		tail -20				>> $@
+$(DATA)/crawl-landing.txt: $(TOPLIST) $(DATA)/rank-bot-25.txt
+	@awk '$$2 == 0 && $$1 <= 25'                $<  > $@
+	@awk '$$2 == 0 && $$1 >  25 && $$1 <= 10000'  $<  | \
+		shuf                    | \
+		head -30                >> $@
+	@awk '$$2 == 0 && $$1 > 10000 && $$1 <= 500000' $<  | \
+		shuf                    | \
+		head -50                >> $@
+	@awk -vN=`cat $(word 2, $^)`            \
+		  '$$2 == 0 && $$1 > 500000 && $$1 <   N' $<  | \
+		shuf                    | \
+		head -70                >> $@
+	@awk '$$2 == 0'                             $<  | \
+		sort -nu -k1,1              | \
+		tail -25                >> $@
 
 # Add internal pages to the crawl list.
-$(DATA)/crawl-pages.txt: $(UTILS)/pick-internal.py $(DATA)/crawl-landing.txt $(TOPLIST)
-	@$(PY) $^ $@
+$(DATA)/crawl-pages.txt: ;
+# 	$(UTILS)/pick-internal.py $(DATA)/crawl-landing.txt $(TOPLIST)
+# 	@$(PY) $^ $@
 
 
 # Crawl pages and generate HAR files for these page-fetches.
 gen-hars: $(DATA)/gen-hars.log
 
 $(DATA)/gen-hars.log: $(UTILS)/har-gen.py $(BMP_BIN) $(CHROME_DRV_BIN) \
-	$(DATA)/crawl-pages.txt $(HAR_DIR)
+	$(DATA)/crawl-landing.txt $(HAR_DIR) 
+# 	$(TOPLIST) $(HAR_DIR) 
 	$(call fn_bmp_check)
 	$(call fn_cdb_check)
 	@$(PY) $^ > $@
@@ -177,6 +181,7 @@ regen-hars: wipe-hars $(DATA)/gen-hars.log
 # Obtain CDN domains from HAR files and characterize the data set.
 get-cdns: $(CDN_HOSTS) $(CDN_STATS)
 
+#==============================CDN_HOSTS==============================#
 # Extract the domains from the HAR files and identify which CDN they
 # correspond to.
 $(DATA)/cdn-domains.txt: $(UTILS)/get_cdn.py $(HAR_FILES)
@@ -194,13 +199,20 @@ $(DATA)/cdn-domains-w-whois.txt: $(UTILS)/whois-lookup.py \
 	$(DATA)/cdn-domains-fixed.txt
 	@$(PY) $^ $@ 2> $(DATA)/whois-lookup.log
 
+# Filter domain names of top CDNs.
+$(DATA)/top-cdn-domains-w-whois.txt: $(DATA)/cdn-domains-w-whois.txt
+	@awk '$$3~/(Google|Amazon|Cloudflare|Akamai|Fastly)/' $< > $@
+
+# Cherry-pick 100 CDN domains from the candidate list.
+$(DATA)/cdn-targets-info.txt: $(UTILS)/pick-cdn-domains.py \
+	$(DATA)/top-cdn-domains-w-whois.txt
+	@$(PY) $^ $@
+
+#==============================CDN_STATS==============================#
 # Filter out duplicates per page fetch.
 $(DATA)/cdn-domains-uniq.txt: $(DATA)/cdn-domains-w-whois.txt
 	@sort $< | uniq -c | sort -k1nr,1 -k4,4 -k2,2 > $@
 
-# Retrieve counts of domains per CDN.
-$(DATA)/domains-per-cdn.txt: $(DATA)/cdn-domains-uniq.txt
-	@awk '{print $$4}' $< | sort | uniq -c | sort -nr -k1,1 > $@
 
 # Extract unique CDN domain names (and drop all other information).
 $(DATA)/cdn-domain-names.txt: $(DATA)/cdn-domains-uniq.txt
@@ -210,14 +222,9 @@ $(DATA)/cdn-domain-names.txt: $(DATA)/cdn-domains-uniq.txt
 $(DATA)/cdn-num-domain-names.txt: $(DATA)/cdn-domain-names.txt
 	@wc -l $< > $@
 
-# Filter domain names of top CDNs.
-$(DATA)/top-cdn-domains-w-whois.txt: $(DATA)/cdn-domains-w-whois.txt
-	@awk '$$3~/(Google|Amazon|Cloudflare|Akamai|Fastly)/' $< > $@
-
-# Cherry-pick 100 CDN domains from the candidate list.
-$(DATA)/cdn-targets-info.txt: $(UTILS)/pick-cdn-domains.py \
-	$(DATA)/top-cdn-domains-w-whois.txt
-	@$(PY) $^ $@
+# Retrieve counts of domains per CDN.
+$(DATA)/domains-per-cdn.txt: $(DATA)/cdn-domains-uniq.txt
+	@awk '{print $$4}' $< | sort | uniq -c | sort -nr -k1,1 > $@
 
 
 # Filter the UNKNOWN CDN domains _prior_ to using `whois`.

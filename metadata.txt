@@ -1,0 +1,15 @@
+1M list generated on 3/03/2026
+
+set of 200 urls chosen (assuming 200 vantage points, that 200*200 measurements)
+
+top 40 + bottom 40
+
+20 random pages from interval - [200,500]
+40 random pages from interval - [1000, 2000]
+60 random pages from interval - [5000, 10000]
+
+Note: Since higher ranked pages are visited more often, shouldn't a larger number of pages be chosen from the higher ranks, as that would more accurately represent internet traffic?
+TODO: ask aditya why he went the opposite route
+
+
+

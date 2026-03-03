@@ -49,13 +49,14 @@ class HARGen:
         corresponding to this fetch.
         """
         self._srv = Server(self._bmp)
+        self._srv.start()
         self._proxy = self._srv.create_proxy(params={'trustAllServers': 'true'})
         
         opts = self._build_opts()
         
         with webdriver.Chrome(service=Service(self._driver_path),
                               options=opts) as driver:
-            self._srv.start()
+            # self._srv.start()
         
             self._proxy.new_har(url)
             driver.get(url)
@@ -79,7 +80,7 @@ def load_crawl_list(crawl_list: str) -> Sequence[tuple[str, str]]:
     """Return a sequence of URLs and associated web-site rankings from
     the crawl list file.
     """
-    return (line.strip().split() for line in
+    return (line.strip().split(',') for line in
             open(crawl_list, 'r', encoding='utf-8'))
 
 
@@ -104,7 +105,7 @@ def generate_hars(hg: HARGen, crawl_list: Sequence[tuple[str, str]],
         # Second URL with the same rank points to an internal page.
         int_page = '1' if rank in ranks else '0'
         ranks.add(rank)
-        
+        url = "https://www." + url
         domain = urllib.parse.urlparse(url).netloc
         
         # Encode the site rank, page type, and domain name in the HAR file.
@@ -117,13 +118,14 @@ def generate_hars(hg: HARGen, crawl_list: Sequence[tuple[str, str]],
             elapsed = time.time() - beg
 
             print(f"> spent {elapsed:.1f} second(s) to record {out_file}")
+
+            num_pages += 1
+
         except WebDriverException as e:
             err = e.msg.split('\n')[0]
             print(f"> Error: Failed generating `{out_file}`! {err}")
 
-        num_pages += 1
-
-        print(f"> fetched {num_pages} page(s)")
+    print(f"> fetched {num_pages} page(s)")
 
 
 def _main(browsermob_proxy: str, chrome_driver: str, crawl_file: str,

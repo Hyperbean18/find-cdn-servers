@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-Usage: pick-cdn-domains.py <input-file> <output-file>
+usage: pick-cdn-domains.py <input-file> <output-file>
 
-Pick CDN domains from a file containing a list of CDN domains
+pick cdn domains from a file containing a list of cdn domains
 discovered in various websites.
 
-Each line in the input file has the following format.
-<har-file-name> <domain> <CDN>
+each line in the input file has the following format.
+<har-file-name> <domain> <cdn>
 
-The <har-file-name> in each record encodes the web-site rank, page
+the <har-file-name> in each record encodes the web-site rank, page
 type, and site domain name as follows.
 <site-rank>_<page-type>_<site-domain>
 
-The value of `page-type` is '0' for the landing and '1' for internal
-page of a web site. To recover the actual web-site's domain name from
+the value of `page-type` is '0' for the landing and '1' for internal
+page of a web site. to recover the actual web-site's domain name from
 `site-domain`, replace all underscores in its value with a period.
 """
 
@@ -27,30 +27,30 @@ SEL_CDNS = ('Akamai', 'Amazon-Cloudfront', 'Cloudflare', 'Google', 'Fastly')
 
 
 def get_rank(file_name: str) -> int:
-    """Decode the HAR filename to extract the web-site ranking.
+    """decode the har filename to extract the web-site ranking.
     """
     fields = file_name.split('_', maxsplit=2)
     
     if len(fields) != 3:
-        raise ValueError('Invalid HAR filename!')
+        raise ValueError('invalid har filename!')
 
     rank, _pt, _site = fields
     
-    # Convert web-site rank to an int.
+    # convert web-site rank to an int.
     return int(rank)
 
 
 def group_doms_by_rank(dom_file: str) -> dict[int, dict[str, set[str]]]:
-    """Loads CDN domains and associated information from the given
+    """loads cdn domains and associated information from the given
     file.
 
-    Each line in the input file has the following format.
-    <har-file-name> <domain> <CDN>
+    each line in the input file has the following format.
+    <har-file-name> <domain> <cdn>
     """
     lines = (line.strip().split() for line in
              open(dom_file, 'r', encoding='utf-8'))
 
-    # Domains grouped by web-site rank and then by CDN.
+    # domains grouped by web-site rank and then by cdn.
     rank_doms = {}
 
     for file_name, cdn_dom, cdn in lines:
@@ -67,11 +67,11 @@ def group_doms_by_rank(dom_file: str) -> dict[int, dict[str, set[str]]]:
     return rank_doms
 
 def map_dom_to_cdn(doms: set[str], dom_file: str) -> dict[str, str]:
-    """Return a mapping between a set of CDN domains to the CDN names
+    """return a mapping between a set of cdn domains to the cdn names
     from the given domains data file.
 
-    Each line in the domains data file has the following format.
-    <har-file-name> <domain> <CDN>
+    each line in the domains data file has the following format.
+    <har-file-name> <domain> <cdn>
     """
     lines = (line.strip().split() for line in
              open(dom_file, 'r', encoding='utf-8'))
@@ -95,7 +95,7 @@ def map_dom_to_cdn(doms: set[str], dom_file: str) -> dict[str, str]:
 
 def doms_by_rank(cdn: str, dom_info: dict[int, dict[str, set[str]]],
                  rbeg: int, rend: int) -> set[str]:
-    """Return the set of domains associated with ranks in the range
+    """return the set of domains associated with ranks in the range
     given by [rbeg, rend].
     """
     ranks = list(range(rbeg, rend + 1))
@@ -114,7 +114,7 @@ def doms_by_rank(cdn: str, dom_info: dict[int, dict[str, set[str]]],
 
 
 def sample_doms(doms: set[str], size: int) -> list[str]:
-    """Obtain random sample of given size from a set of domain names.
+    """obtain random sample of given size from a set of domain names.
     """
     if len(doms) <= size:
         return list(doms)
@@ -139,7 +139,7 @@ def sample_doms_in_range(cdn: str,
                          rbeg: int,
                          rend:int,
                          existing: set[str]) -> list[str]:
-    """Sample domains uniformly at random from sites of ranks in the
+    """sample domains uniformly at random from sites of ranks in the
     range defined by [rbeg, rend].
     """
     candidates = doms_by_rank(cdn, doms, rbeg, rend)
@@ -148,8 +148,8 @@ def sample_doms_in_range(cdn: str,
 
 def get_rank_ranges(dom_info: dict[int, dict[str, set[str]]]
                     ) -> dict[str, tuple[int, int]]:
-    """Find the highest and lowest rank of web sites associated with
-    each CDN domain.
+    """find the highest and lowest rank of web sites associated with
+    each cdn domain.
     """
     rank_ranges = {}
     
@@ -169,6 +169,45 @@ def get_rank_ranges(dom_info: dict[int, dict[str, set[str]]]
 
     return rank_ranges
 
+def tranco_cherry_pick_doms(dom_info: dict[int, dict[str, set[str]]]
+                     ) -> dict[str, tuple[int, int]]:
+    """Cherry-pick domains from the dict of available domains (grouped
+    by web-site rank) based on a pre-defined sampling algorithm.
+    """
+    rank_ranges = get_rank_ranges(dom_info)
+    
+    # Last 26 web-site ranks.
+    ranks = sorted(dom_info.keys())[-26:]
+    # 26th highest rank from the last.
+    last_26 = ranks[0]
+    # 25th highest rank from the last.
+    last_25 = ranks[1]
+    # Last rank.
+    last = ranks[-1]
+    # Cherry-picked domains.
+    doms = set()
+    n = len(SEL_CDNS)
+    # Sample 30 CDN domains from sites with rank in [1, 25].
+    for cdn in SEL_CDNS:
+        doms.update(sample_doms_in_range(cdn, dom_info, 30/n,
+                                         1, 25, doms))
+    # Sample 30 CDN domains from sites with rank in (25, 10000].
+    for cdn in SEL_CDNS:
+        doms.update(sample_doms_in_range(cdn, dom_info, 30/n,
+                                         26, 10000, doms))
+    # Sample 50 CDN domains from sites with rank in (10000, 500000].
+    for cdn in SEL_CDNS:
+        doms.update(sample_doms_in_range(cdn, dom_info, 50/n,
+                                         10001, 500000, doms))
+    # Sample 70 CDN domains from sites with rank in (500000, bottom-25).
+    for cdn in SEL_CDNS:
+        doms.update(sample_doms_in_range(cdn, dom_info, 70/n,
+                                         500001, last_26, doms))
+    # Sample 30 CDN domains from sites with rank in [bottom-25, bottom].
+    for cdn in SEL_CDNS:
+        doms.update(sample_doms_in_range(cdn, dom_info, 30/n,
+                                         last_25, last, doms))
+    return {d: tuple(rank_ranges[d]) for d in doms}
 
 def cherry_pick_doms(dom_info: dict[int, dict[str, set[str]]]
                      ) -> dict[str, tuple[int, int]]:
@@ -221,13 +260,14 @@ def cherry_pick_doms(dom_info: dict[int, dict[str, set[str]]]
 
 def _main(*args):
     dom_file, out_file = args
+    print(dom_file)
 
     # Load domains into a hash keyed using the web-site rank.
     dom_info = group_doms_by_rank(dom_file)
 
     with open(out_file, 'w', encoding='utf-8') as f:
         # Sample CDN domains using a pre-defined policy.
-        doms = cherry_pick_doms(dom_info)
+        doms = tranco_cherry_pick_doms(dom_info)
         dom_to_cdn = map_dom_to_cdn(doms, dom_file)
 
         for dom, (hi_rank, lo_rank) in doms.items():
