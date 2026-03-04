@@ -54,20 +54,26 @@ class HARGen:
         
         # Your existing opts
         opts.add_argument("--ignore-certificate-errors")
-        opts.add_argument("--proxy-server={0}".format(self._proxy.proxy))
+        # opts.add_argument("--proxy-server={0}".format(self._proxy.proxy))
         
         # Optional: Helps when running in environments with limited resources
         # opts.add_argument("--disable-gpu")
+        opts.page_load_strategy = 'eager'
         
         return opts
 
     def fetch(self, url: str) -> str:
         opts = self._build_opts()
-        with webdriver.Chrome(service=Service(self._driver_path), options=opts) as driver:
-            self._proxy.new_har(url)
-            driver.get(url)
-            time.sleep(self._timeout)
-            return json.dumps(self._proxy.har)
+        try:
+            with webdriver.Chrome(service=Service(self._driver_path), options=opts) as driver:
+                driver.set_page_load_timeout(self._timeout)
+                self._proxy.new_har(url)
+                driver.get(url)
+                time.sleep(self._timeout)
+                return json.dumps(self._proxy.har)
+        except Exception as e:
+            raise e
+        
 
     def run(self, url: str, harfile: str) -> None:
         with open(harfile, 'w', encoding='utf-8') as out:
