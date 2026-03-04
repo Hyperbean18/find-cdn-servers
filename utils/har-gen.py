@@ -45,9 +45,20 @@ class HARGen:
 
     def _build_opts(self) -> selenium.webdriver.chrome.options.Options:
         opts = webdriver.ChromeOptions()
-        opts.add_argument('headless')
+        # Use the new headless mode (more stable in newer Chrome versions)
+        opts.add_argument("--headless=new") 
+        
+        # CRITICAL: These two prevent the Segfaults/Status -11
+        opts.add_argument("--no-sandbox")
+        opts.add_argument("--disable-dev-shm-usage")
+        
+        # Your existing opts
         opts.add_argument("--ignore-certificate-errors")
         opts.add_argument("--proxy-server={0}".format(self._proxy.proxy))
+        
+        # Optional: Helps when running in environments with limited resources
+        # opts.add_argument("--disable-gpu")
+        
         return opts
 
     def fetch(self, url: str) -> str:
