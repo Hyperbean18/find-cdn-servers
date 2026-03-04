@@ -54,11 +54,13 @@ class HARGen:
         
         # Your existing opts
         opts.add_argument("--ignore-certificate-errors")
-        # opts.add_argument("--proxy-server={0}".format(self._proxy.proxy))
+        opts.add_argument('--allow-running-insecure-content')
+        opts.add_argument('--disable-web-security')
+        opts.add_argument("--proxy-server={0}".format(self._proxy.proxy))
         
         # Optional: Helps when running in environments with limited resources
         # opts.add_argument("--disable-gpu")
-        opts.page_load_strategy = 'eager'
+        # opts.page_load_strategy = 'eager'
         
         return opts
 
